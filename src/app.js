@@ -187,7 +187,7 @@ io.on("connection", (socket) => {
 
       console.log(`${userName} rejoined room ${roomName}`);
 
-      socket.emit("rejoin-successful", { room, user });
+      socket.emit("rejoined-room", { room, user });
       socket.join(roomName);
     } catch (error) {
       console.error("Error during rejoin:", error);
