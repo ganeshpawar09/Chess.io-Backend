@@ -132,33 +132,6 @@ io.on("connection", (socket) => {
       socket.emit("error", "An error occurred while leaving the room");
     }
   });
-
-  socket.on(
-    "send-updated-board",
-    async ({ roomName, chessBoard, senderColor }) => {
-      try {
-        const room = await Room.findOne({ roomName });
-
-        if (!room) {
-          socket.emit("error", `No room exists with the name: ${roomName}`);
-          return;
-        }
-
-        const turn = senderColor === "white" ? "black" : "white";
-        room.currentCondition = chessBoard;
-        room.currentTurn = turn;
-
-        console.log(`Saving board: ${chessBoard}   ${turn}`);
-
-        await room.save();
-
-        io.to(roomName).emit("newBoard", { room });
-      } catch (error) {
-        console.error("Error sending new board:", error);
-        socket.emit("error", "An error occurred while updating the board");
-      }
-    }
-  );
   socket.on("rejoin-room", async ({ roomName, userName }) => {
     try {
       const room = await Room.findOne({ roomName });
@@ -192,6 +165,33 @@ io.on("connection", (socket) => {
       socket.emit("error", "An error occurred during rejoin");
     }
   });
+
+  socket.on(
+    "send-updated-board",
+    async ({ roomName, chessBoard, senderColor }) => {
+      try {
+        const room = await Room.findOne({ roomName });
+
+        if (!room) {
+          socket.emit("error", `No room exists with the name: ${roomName}`);
+          return;
+        }
+
+        const turn = senderColor === "white" ? "black" : "white";
+        room.currentCondition = chessBoard;
+        room.currentTurn = turn;
+
+        console.log(`Saving board: ${chessBoard}   ${turn}`);
+
+        await room.save();
+
+        socket.to(roomName).emit("newBoard", { room });
+      } catch (error) {
+        console.error("Error sending new board:", error);
+        socket.emit("error", "An error occurred while updating the board");
+      }
+    }
+  );
 
   socket.on("game-over", async ({ roomName }) => {
     try {
