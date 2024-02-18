@@ -12,7 +12,6 @@ const userSchema = new mongoose.Schema(
     lastRoomName: {
       type: String,
     },
-
     lastGameColor: {
       type: String,
     },

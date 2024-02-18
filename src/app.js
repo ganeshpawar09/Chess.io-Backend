@@ -103,8 +103,11 @@ io.on("connection", (socket) => {
       room.roomSize = room.roomSize + 1;
       await room.save();
       console.log("new member join");
-      io.to(roomName).emit("newMemeberJoin", {
-        roomName: room.roomName,
+      io.broadcast
+        .to(roomName)
+        .emit("newMemberJoin", `${userName} joined the room`);
+      socket.emit("joined-room", {
+        roomName: newRoom.roomName,
         user: newUser,
       });
     } catch (error) {
