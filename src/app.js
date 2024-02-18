@@ -152,7 +152,7 @@ io.on("connection", (socket) => {
 
         await room.save();
 
-        socket.broadcast.to(roomName).emit("newBoard", { chessBoard, turn });
+        io.to(roomName).emit("newBoard", { room });
       } catch (error) {
         console.error("Error sending new board:", error);
         socket.emit("error", "An error occurred while updating the board");
