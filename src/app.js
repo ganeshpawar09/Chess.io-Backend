@@ -65,7 +65,7 @@ io.on("connection", (socket) => {
       await newRoom.save();
 
       socket.emit("room-created", {
-        roomName: newRoom.roomName,
+        room: newRoom,
         user: newUser,
       });
     } catch (error) {
@@ -107,7 +107,7 @@ io.on("connection", (socket) => {
         .to(roomName)
         .emit("newMemberJoin", `${userName} joined the room`);
       socket.emit("joined-room", {
-        roomName: newRoom.roomName,
+        room: room,
         user: newUser,
       });
     } catch (error) {
