@@ -226,7 +226,7 @@ io.on("connection", (socket) => {
         await room.save();
 
         // Emit the entire room object to all clients in the room
-        io.to(room.roomName).emit("newBoa rd", { room });
+        io.to(room.roomName).emit("newBoard", { room });
       } catch (error) {
         console.error("Error sending new board:", error);
         socket.emit("error", "An error occurred while updating the board");
