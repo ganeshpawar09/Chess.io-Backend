@@ -167,7 +167,7 @@ io.on("connection", (socket) => {
 
       console.log(`${userName} rejoined room ${roomName}`);
 
-      io.to(room.roomName).emit("rejoined", { userName });
+      io.in(room.roomName).emit("rejoined", { userName });
 
       socket.emit("rejoined-room", { room, user });
     } catch (error) {
@@ -223,7 +223,9 @@ io.on("connection", (socket) => {
         );
 
         await room.save();
-        io.to(room.roomName).emit("newBoard", { room });
+
+        // Emit the entire room object to all clients in the room
+        io.to(room.roomName).emit("newBoa rd", { room });
       } catch (error) {
         console.error("Error sending new board:", error);
         socket.emit("error", "An error occurred while updating the board");
