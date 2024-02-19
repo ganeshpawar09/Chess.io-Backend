@@ -168,6 +168,7 @@ io.on("connection", (socket) => {
       console.log(`${userName} rejoined room ${roomName}`);
 
       io.in(room.roomName).emit("rejoined", { userName });
+      socket.join(room.roomName);
 
       socket.emit("rejoined-room", { room, user });
     } catch (error) {
