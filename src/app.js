@@ -245,7 +245,6 @@ io.on("connection", (socket) => {
 
         await room.save();
 
-        // Emit the entire room object to all clients in the room
         io.to(room.roomName).emit("newBoard", { room });
       } catch (error) {
         console.error("Error sending new board:", error);
@@ -254,9 +253,9 @@ io.on("connection", (socket) => {
     }
   );
 
-  socket.on("game-over", async ({ roomName }) => {
+  socket.on("game-alert", async ({ roomName, alert }) => {
     try {
-      if (!roomName) {
+      if (!roomName || !alert) {
         socket.emit("error", "Invalid Data");
         return;
       }
@@ -268,10 +267,8 @@ io.on("connection", (socket) => {
         socket.emit("error", `No room exists with the name: ${roomName}`);
         return;
       }
-
-      room.gameIsOver = true;
-      await room.save();
-
+      
+      io.to(room.roomName).emit("newAlert", { alert });
       console.log(`${roomName}s game is over`);
     } catch (error) {
       console.error(`Error while setting gameover: ${error.message}`);
