@@ -25,6 +25,9 @@ io.on("connection", (socket) => {
 
   socket.on("create-room", async ({ userName, roomName }) => {
     try {
+      userName = userName.toString().trim().toLowerCase();
+      roomName = roomName.toString().trim().toLowerCase();
+
       const isRoomNameExist = await Room.findOne({ roomName: roomName });
 
       if (isRoomNameExist) {
@@ -61,9 +64,12 @@ io.on("connection", (socket) => {
       }
 
       newRoom.players.push(newUser);
-      newRoom.roomSize = newRoom.roomSize + 1;
+      newRoom.roomSize = newRoom.players.length;
+
       await newRoom.save();
 
+      console.log(`${newUser.userName} created the ${newRoom.roomName}`);
+      socket.join(newRoom.roomName);
       socket.emit("room-created", {
         room: newRoom,
         user: newUser,
@@ -75,6 +81,9 @@ io.on("connection", (socket) => {
   });
   socket.on("join-room", async ({ userName, roomName }) => {
     try {
+      userName = userName.toString().trim().toLowerCase();
+      roomName = roomName.toString().trim().toLowerCase();
+
       const room = await Room.findOne({ roomName: roomName });
 
       if (!room) {
@@ -85,7 +94,18 @@ io.on("connection", (socket) => {
         socket.emit("error", "Room has no space");
         return;
       }
+      for (const player of room.players) {
+        const p = await User.findById(player);
+        if (p.userName === userName) {
+          console.log(`${p.userName} already in room ${room.roomName}`);
 
+          socket.emit("joined-room", {
+            room: room,
+            user: p,
+          });
+          return;
+        }
+      }
       const newUser = await User.create({
         userName,
         socketId: socket.id,
@@ -100,10 +120,14 @@ io.on("connection", (socket) => {
       }
 
       room.players.push(newUser);
-      room.roomSize = room.roomSize + 1;
+      room.roomSize = room.players.length;
+
       await room.save();
-      console.log("new member join");
-      io.to(roomName).emit("newMemberJoin", room);
+
+      console.log(`${newUser.userName} join the room ${room.roomName}`);
+
+      socket.join(room.roomName);
+      io.to(room.roomName).emit("joined", { userName });
       socket.emit("joined-room", {
         room: room,
         user: newUser,
@@ -114,26 +138,11 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("leave-room", async ({ roomName, userName }) => {
-    try {
-      const room = await Room.findOne({ roomName });
-
-      if (!room) {
-        socket.emit("error", `No room exists with the name: ${roomName}`);
-        return;
-      }
-
-      room.players = room.players.filter((user) => user.userName !== userName);
-      await room.save();
-
-      console.log(`${userName} successfully exited from ${roomName}`);
-    } catch (error) {
-      console.error(`Error leaving room: ${error.message}`);
-      socket.emit("error", "An error occurred while leaving the room");
-    }
-  });
   socket.on("rejoin-room", async ({ roomName, userName }) => {
     try {
+      userName = userName.toString().trim().toLowerCase();
+      roomName = roomName.toString().trim().toLowerCase();
+
       const room = await Room.findOne({ roomName });
 
       if (!room) {
@@ -158,18 +167,46 @@ io.on("connection", (socket) => {
 
       console.log(`${userName} rejoined room ${roomName}`);
 
+      io.to(room.roomName).emit("rejoined", { userName });
+
       socket.emit("rejoined-room", { room, user });
-      socket.join(roomName);
     } catch (error) {
       console.error("Error during rejoin:", error);
       socket.emit("error", "An error occurred during rejoin");
     }
   });
 
+  socket.on("leave-room", async ({ roomName, userId }) => {
+    try {
+      roomName = roomName.toString().trim().toLowerCase();
+
+      const room = await Room.findOne({ roomName });
+
+      if (!room) {
+        socket.emit("error", `No room exists with the name: ${roomName}`);
+        return;
+      }
+
+      const updatedRoom = await Room.findOneAndUpdate(
+        { roomName },
+        { $pull: { players: userId } },
+        { new: true }
+      );
+      updatedRoom.roomSize = updatedRoom.players.length;
+      await updatedRoom.save();
+
+      console.log(`${userId} successfully exited from ${roomName}`);
+    } catch (error) {
+      console.error(`Error leaving room: ${error.message}`);
+      socket.emit("error", "An error occurred while leaving the room");
+    }
+  });
   socket.on(
     "send-updated-board",
     async ({ roomName, chessBoard, senderColor }) => {
       try {
+        roomName = roomName.toString().trim().toLowerCase();
+
         const room = await Room.findOne({ roomName });
 
         if (!room) {
@@ -181,11 +218,12 @@ io.on("connection", (socket) => {
         room.currentCondition = chessBoard;
         room.currentTurn = turn;
 
-        console.log(`Saving board: ${chessBoard}   ${turn}`);
+        console.log(
+          `Saving board: ${chessBoard}   ${turn} in ${room.roomName}`
+        );
 
         await room.save();
-
-        socket.emit("newBoard", { room });
+        io.to(room.roomName).emit("newBoard", { room });
       } catch (error) {
         console.error("Error sending new board:", error);
         socket.emit("error", "An error occurred while updating the board");
@@ -195,6 +233,8 @@ io.on("connection", (socket) => {
 
   socket.on("game-over", async ({ roomName }) => {
     try {
+      roomName = roomName.toString().trim().toLowerCase();
+
       const room = await Room.findOne({ roomName });
 
       if (!room) {
