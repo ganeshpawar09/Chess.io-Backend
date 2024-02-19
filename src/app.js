@@ -25,6 +25,10 @@ io.on("connection", (socket) => {
 
   socket.on("create-room", async ({ userName, roomName }) => {
     try {
+      if (!roomName || !userName) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
       userName = userName.toString().trim().toLowerCase();
       roomName = roomName.toString().trim().toLowerCase();
 
@@ -81,6 +85,10 @@ io.on("connection", (socket) => {
   });
   socket.on("join-room", async ({ userName, roomName }) => {
     try {
+      if (!roomName || !userName) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
       userName = userName.toString().trim().toLowerCase();
       roomName = roomName.toString().trim().toLowerCase();
 
@@ -140,6 +148,10 @@ io.on("connection", (socket) => {
 
   socket.on("rejoin-room", async ({ roomName, userName }) => {
     try {
+      if (!roomName || !userName) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
       userName = userName.toString().trim().toLowerCase();
       roomName = roomName.toString().trim().toLowerCase();
 
@@ -179,6 +191,10 @@ io.on("connection", (socket) => {
 
   socket.on("leave-room", async ({ roomName, userId }) => {
     try {
+      if (!roomName || !userId) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
       roomName = roomName.toString().trim().toLowerCase();
 
       const room = await Room.findOne({ roomName });
@@ -206,6 +222,10 @@ io.on("connection", (socket) => {
     "send-updated-board",
     async ({ roomName, chessBoard, senderColor }) => {
       try {
+        if (!roomName || !chessBoard || !senderColor) {
+          socket.emit("error", "Invalid Data");
+          return;
+        }
         roomName = roomName.toString().trim().toLowerCase();
 
         const room = await Room.findOne({ roomName });
@@ -236,6 +256,10 @@ io.on("connection", (socket) => {
 
   socket.on("game-over", async ({ roomName }) => {
     try {
+      if (!roomName) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
       roomName = roomName.toString().trim().toLowerCase();
 
       const room = await Room.findOne({ roomName });
