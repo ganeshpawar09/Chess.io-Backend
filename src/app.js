@@ -209,8 +209,12 @@ io.on("connection", (socket) => {
         { $pull: { players: userId } },
         { new: true }
       );
+      await User.findByIdAndDelete(userId);
       updatedRoom.roomSize = updatedRoom.players.length;
       await updatedRoom.save();
+      if (updatedRoom.roomSize == 0) {
+        await Room.findByIdAndDelete(updatedRoom.id);
+      }
 
       console.log(`${userId} successfully exited from ${roomName}`);
     } catch (error) {
@@ -253,9 +257,9 @@ io.on("connection", (socket) => {
     }
   );
 
-  socket.on("game-alert", async ({ roomName, alert }) => {
+  socket.on("game-alert", async ({ roomName, title, content }) => {
     try {
-      if (!roomName || !alert) {
+      if (!roomName || !title || !content) {
         socket.emit("error", "Invalid Data");
         return;
       }
@@ -267,9 +271,8 @@ io.on("connection", (socket) => {
         socket.emit("error", `No room exists with the name: ${roomName}`);
         return;
       }
-      
-      io.to(room.roomName).emit("newAlert", { alert });
-      console.log(`${roomName}s game is over`);
+
+      io.to(room.roomName).emit("newAlert", { title, content });
     } catch (error) {
       console.error(`Error while setting gameover: ${error.message}`);
       socket.emit("error", "An error occurred while setting gameover");
