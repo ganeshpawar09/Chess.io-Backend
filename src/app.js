@@ -216,7 +216,6 @@ io.on("connection", (socket) => {
       if (updatedRoom.roomSize == 0) {
         await Room.findByIdAndDelete(updatedRoom.id);
       }
-      socket.broadcast.to(room.roomName).emit("leaved", { userName });
     } catch (error) {
       console.error(`Error leaving room: ${error.message}`);
       socket.emit("error", "An error occurred while leaving the room");
