@@ -69,7 +69,9 @@ io.on("connection", (socket) => {
 
       newRoom.players.push(newUser);
       newRoom.roomSize = newRoom.players.length;
-
+      if (newRoom.creatorName !== userName) {
+        newRoom.creatorName = userName;
+      }
       await newRoom.save();
 
       console.log(`${newUser.userName} created the ${newRoom.roomName}`);
@@ -130,7 +132,9 @@ io.on("connection", (socket) => {
 
       room.players.push(newUser);
       room.roomSize = room.players.length;
-
+      if (room.creatorName !== userName) {
+        room.opponentName = userName;
+      }
       await room.save();
 
       console.log(`${newUser.userName} join the room ${room.roomName}`);
