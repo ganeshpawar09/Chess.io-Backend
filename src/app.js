@@ -82,9 +82,9 @@ io.on("connection", (socket) => {
       socket.emit("error", "An error occurred while creating the room");
     }
   });
-  socket.on("join-room", async ({ userName, roomName }) => {
+  socket.on("join-room", async ({ userName, roomName, sdpOffer }) => {
     try {
-      if (!roomName || !userName) {
+      if (!roomName || !userName || !sdpOffer) {
         socket.emit("error", "Invalid Data");
         return;
       }
@@ -105,7 +105,9 @@ io.on("connection", (socket) => {
         const p = await User.findById(player);
         if (p.userName === userName) {
           console.log(`${p.userName} already in room ${room.roomName}`);
-          socket.broadcast.to(room.roomName).emit("joined", { userName });
+          socket.broadcast
+            .to(room.roomName)
+            .emit("joined", { userName, sdpOffer });
           socket.join(room.roomName);
           socket.emit("joined-room", {
             room: room,
@@ -137,7 +139,7 @@ io.on("connection", (socket) => {
       console.log(`${newUser.userName} join the room ${room.roomName}`);
 
       socket.join(room.roomName);
-      socket.broadcast.to(room.roomName).emit("joined", { userName });
+      socket.broadcast.to(room.roomName).emit("joined", { userName, sdpOffer });
       socket.emit("joined-room", {
         room: room,
         user: newUser,
