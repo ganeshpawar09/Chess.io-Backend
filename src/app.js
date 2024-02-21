@@ -108,7 +108,9 @@ io.on("connection", (socket) => {
         const p = await User.findById(player);
         if (p.userName === userName) {
           console.log(`${p.userName} already in room ${room.roomName}`);
-          socket.broadcast.to(room.roomName).emit("joined", { userName });
+          socket.broadcast
+            .to(room.roomName)
+            .emit("joined", { userName, socketId: socket.id });
 
           socket.emit("joined-room", {
             room: room,
@@ -140,7 +142,9 @@ io.on("connection", (socket) => {
       console.log(`${newUser.userName} join the room ${room.roomName}`);
 
       socket.join(room.roomName);
-      socket.broadcast.to(room.roomName).emit("joined", { userName });
+      socket.broadcast
+        .to(room.roomName)
+        .emit("joined", { userName, socketId: socket.id });
       socket.emit("joined-room", {
         room: room,
         user: newUser,
@@ -184,7 +188,9 @@ io.on("connection", (socket) => {
 
       console.log(`${userName} rejoined room ${roomName}`);
 
-      socket.broadcast.to(room.roomName).emit("rejoined", { userName });
+      socket.broadcast
+        .to(room.roomName)
+        .emit("rejoined", { userName, socketId: socket.id });
       socket.join(room.roomName);
 
       socket.emit("rejoined-room", { room, user });
@@ -279,6 +285,24 @@ io.on("connection", (socket) => {
       } else {
         io.to(room.roomName).emit("newAlert", { title, content });
       }
+    } catch (error) {
+      console.error(`Error while setting gameover: ${error.message}`);
+      socket.emit("error", "An error occurred while setting gameover");
+    }
+  });
+  socket.on("send-offer", async ({ socketId, offer, candidate }) => {
+    try {
+      if (!socketId || !offer || !candidate) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
+      console.table([socketId, offer, candidate]);
+
+      io.to(socketId).emit("newOffer", {
+        offer,
+        candidate,
+        senderSocketId: socket.id,
+      });
     } catch (error) {
       console.error(`Error while setting gameover: ${error.message}`);
       socket.emit("error", "An error occurred while setting gameover");
