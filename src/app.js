@@ -215,6 +215,74 @@ io.on("connection", (socket) => {
       }
     }
   );
+  socket.on("send-answer", async ({ roomName, sdpAnswer }) => {
+    try {
+      if (!roomName || !sdpAnswer) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
+      roomName = roomName.toString().trim().toLowerCase();
+
+      const room = await Room.findOne({ roomName });
+
+      if (!room) {
+        socket.emit("error", `No room exists with the name: ${roomName}`);
+        return;
+      }
+      console.log("Sending Answer to give offer");
+      socket.broadcast.to(room.roomName).emit("answered", { sdpAnswer });
+    } catch (error) {
+      console.error("Error sending new board:", error);
+      socket.emit("error", "An error occurred while updating the board");
+    }
+  });
+  socket.on("IceCandidateA", async ({ roomName, iceCandidate }) => {
+    try {
+      if (!roomName || !iceCandidate) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
+      roomName = roomName.toString().trim().toLowerCase();
+
+      const room = await Room.findOne({ roomName });
+
+      if (!room) {
+        socket.emit("error", `No room exists with the name: ${roomName}`);
+        return;
+      }
+      console.log("Sending first ice candidates to give answerr");
+
+      socket.broadcast
+        .to(room.roomName)
+        .emit("first-IceCandidate", { iceCandidate });
+    } catch (error) {
+      console.error("Error sending new board:", error);
+      socket.emit("error", "An error occurred while updating the board");
+    }
+  });
+  socket.on("IceCandidateB", async ({ roomName, iceCandidate }) => {
+    try {
+      if (!roomName || !iceCandidate) {
+        socket.emit("error", "Invalid Data");
+        return;
+      }
+      roomName = roomName.toString().trim().toLowerCase();
+
+      const room = await Room.findOne({ roomName });
+
+      if (!room) {
+        socket.emit("error", `No room exists with the name: ${roomName}`);
+        return;
+      }
+      console.log("Sending second ice candidates to give first ice candidates");
+      socket.broadcast
+        .to(room.roomName)
+        .emit("second-IceCandidate", { iceCandidate });
+    } catch (error) {
+      console.error("Error sending new board:", error);
+      socket.emit("error", "An error occurred while updating the board");
+    }
+  });
 
   socket.on("game-alert", async ({ roomName, title, content }) => {
     try {
