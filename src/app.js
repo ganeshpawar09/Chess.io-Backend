@@ -35,10 +35,7 @@ io.on("connection", (socket) => {
       const isRoomNameExist = await Room.findOne({ roomName: roomName });
 
       if (isRoomNameExist) {
-        if (isRoomNameExist.roomSize > 0) {
-          socket.emit("error", "Room already exists");
-          return;
-        }
+        socket.emit("error", "Room already exists");
       }
 
       const newRoom = await Room.create({
@@ -109,7 +106,7 @@ io.on("connection", (socket) => {
         if (p.userName === userName) {
           console.log(`${p.userName} already in room ${room.roomName}`);
           socket.broadcast.to(room.roomName).emit("joined", { userName });
-
+          socket.join(room.roomName);
           socket.emit("joined-room", {
             room: room,
             user: p,
