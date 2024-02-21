@@ -8,12 +8,11 @@ const roomSchema = new mongoose.Schema(
     },
     creatorName: {
       type: String,
-      default:"Player 1"
+      default: "Player 1",
     },
     opponentName: {
       type: String,
-      default:"Player 2"
-
+      default: "Player 2",
     },
     roomSize: {
       type: Number,
@@ -40,6 +39,8 @@ const roomSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    offer: { type: Object, required: true },
+    candidate: { type: Object },
   },
   { timestamps: true }
 );

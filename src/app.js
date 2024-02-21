@@ -23,7 +23,7 @@ app.use(
 io.on("connection", (socket) => {
   console.log(`New connection to server ${socket.id}`);
 
-  socket.on("create-room", async ({ userName, roomName }) => {
+  socket.on("create-room", async ({ userName, roomName, offer, candidate }) => {
     try {
       if (!roomName || !userName) {
         socket.emit("error", "Invalid Data");
@@ -48,6 +48,8 @@ io.on("connection", (socket) => {
           "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         currentTurn: "white",
         gameIsOver: false,
+        offer,
+        candidate,
       });
 
       if (!newRoom) {
