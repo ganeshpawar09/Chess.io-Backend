@@ -8,12 +8,11 @@ const roomSchema = new mongoose.Schema(
     },
     creatorName: {
       type: String,
-      default:"Player 1"
+      default: "Player 1",
     },
     opponentName: {
       type: String,
-      default:"Player 2"
-
+      default: "Player 2",
     },
     roomSize: {
       type: Number,
