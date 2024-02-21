@@ -23,7 +23,7 @@ app.use(
 io.on("connection", (socket) => {
   console.log(`New connection to server ${socket.id}`);
 
-  socket.on("create-room", async ({ userName, roomName, offer, candidate }) => {
+  socket.on("create-room", async ({ userName, roomName }) => {
     try {
       if (!roomName || !userName) {
         socket.emit("error", "Invalid Data");
@@ -48,8 +48,6 @@ io.on("connection", (socket) => {
           "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
         currentTurn: "white",
         gameIsOver: false,
-        offer,
-        candidate,
       });
 
       if (!newRoom) {
@@ -150,49 +148,6 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error(`Error joining room: ${error.message}`);
       socket.emit("error", "An error occurred while joining the room");
-    }
-  });
-
-  socket.on("rejoin-room", async ({ roomName, userName }) => {
-    try {
-      if (!roomName || !userName) {
-        socket.emit("error", "Invalid Data");
-        return;
-      }
-      userName = userName.toString().trim().toLowerCase();
-      roomName = roomName.toString().trim().toLowerCase();
-
-      const room = await Room.findOne({ roomName });
-
-      if (!room) {
-        socket.emit("error", `No room exists with the name: ${roomName}`);
-        return;
-      }
-
-      let user = null;
-
-      for (const player of room.players) {
-        const p = await User.findById(player);
-        if (p.userName === userName) {
-          user = p;
-          break;
-        }
-      }
-
-      if (!user) {
-        socket.emit("error", `User ${userName} not found in room ${roomName}`);
-        return;
-      }
-
-      console.log(`${userName} rejoined room ${roomName}`);
-
-      socket.broadcast.to(room.roomName).emit("rejoined", { userName });
-      socket.join(room.roomName);
-
-      socket.emit("rejoined-room", { room, user });
-    } catch (error) {
-      console.error("Error during rejoin:", error);
-      socket.emit("error", "An error occurred during rejoin");
     }
   });
 
