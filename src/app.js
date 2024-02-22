@@ -36,6 +36,7 @@ io.on("connection", (socket) => {
 
       if (isRoomNameExist) {
         socket.emit("error", "Room already exists");
+        return;
       }
 
       const newRoom = await Room.create({
