@@ -89,6 +89,8 @@ io.on("connection", (socket) => {
         socket.emit("error", "Invalid Data");
         return;
       }
+      console.log(sdpOffer);
+
       userName = userName.toString().trim().toLowerCase();
       roomName = roomName.toString().trim().toLowerCase();
 
