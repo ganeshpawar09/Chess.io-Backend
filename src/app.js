@@ -147,11 +147,16 @@ io.on("connection", (socket) => {
           socket.emit("error", "Invalid Data");
           return;
         }
+
         userName = userName.toString().trim().toLowerCase();
         roomName = roomName.toString().trim().toLowerCase();
-        socket
-          .to(socketId)
-          .emit("answer", { sdpAnswer, iceCandidate, userName, roomName });
+        console.log("Sending answer to offer");
+        io.to(socketId).emit("answer", {
+          sdpAnswer,
+          iceCandidate,
+          userName,
+          roomName,
+        });
       } catch (error) {
         console.error(`Error joining room: ${error.message}`);
         socket.emit("error", "An error occurred while joining the room");
