@@ -119,6 +119,8 @@ io.on("connection", (socket) => {
           return;
         }
         socket.to(room.roomName).emit("asking-to-join", {
+          userName,
+          roomName,
           socketId: socket.id,
           sdpOffer,
           iceCandidate,
