@@ -120,7 +120,7 @@ io.on("connection", (socket) => {
         }
         socket.to(room.roomName).emit("asking-to-join", {
           userName,
-          roomName,
+          roomName, 
           socketId: socket.id,
           sdpOffer,
           iceCandidate,
