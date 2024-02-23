@@ -104,7 +104,9 @@ io.on("connection", (socket) => {
           const p = await User.findById(player);
           if (p.userName === userName) {
             console.log(`${p.userName} already in room ${room.roomName}`);
-            socket.to(room.roomName).emit("asking-to-join", {
+            console.log("sending the asking to join request");
+
+            io.to(room.roomName).emit("asking-to-join", {
               userName,
               roomName,
               socketId: socket.id,
@@ -118,9 +120,10 @@ io.on("connection", (socket) => {
           socket.emit("error", "Room has no space");
           return;
         }
-        socket.to(room.roomName).emit("asking-to-join", {
+        console.log("sending the asking to join request");
+        io.to(room.roomName).emit("asking-to-join", {
           userName,
-          roomName, 
+          roomName,
           socketId: socket.id,
           sdpOffer,
           iceCandidate,
