@@ -105,7 +105,6 @@ io.on("connection", (socket) => {
           if (p.userName === userName) {
             console.log(`${p.userName} already in room ${room.roomName}`);
             console.log("sending the asking to join request");
-
             io.to(room.roomName).emit("asking-to-join", {
               userName,
               roomName,
