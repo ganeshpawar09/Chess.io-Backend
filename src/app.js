@@ -83,13 +83,84 @@ io.on("connection", (socket) => {
       socket.emit("error", "An error occurred while creating the room");
     }
   });
-  socket.on("join-room", async ({ userName, roomName, sdpOffer }) => {
+  socket.on(
+    "ask-to-join",
+    async ({ userName, roomName, sdpOffer, iceCandidate }) => {
+      try {
+        if (!roomName || !userName || !sdpOffer || !iceCandidate) {
+          socket.emit("error", "Invalid Data");
+          return;
+        }
+        userName = userName.toString().trim().toLowerCase();
+        roomName = roomName.toString().trim().toLowerCase();
+
+        const room = await Room.findOne({ roomName: roomName });
+
+        if (!room) {
+          socket.emit("error", `No room exist by the name: ${roomName}`);
+          return;
+        }
+        for (const player of room.players) {
+          const p = await User.findById(player);
+          if (p.userName === userName) {
+            console.log(`${p.userName} already in room ${room.roomName}`);
+            socket.to(room.roomName).emit("asking-to-join", {
+              userName,
+              roomName,
+              socketId: socket.id,
+              sdpOffer,
+              iceCandidate,
+            });
+            return;
+          }
+        }
+        if (room.roomSize > 1) {
+          socket.emit("error", "Room has no space");
+          return;
+        }
+        socket.to(room.roomName).emit("asking-to-join", {
+          socketId: socket.id,
+          sdpOffer,
+          iceCandidate,
+        });
+      } catch (error) {
+        console.error(`Error joining room: ${error.message}`);
+        socket.emit("error", "An error occurred while joining the room");
+      }
+    }
+  );
+  socket.on(
+    "send-answer",
+    async ({ roomName, userName, socketId, sdpAnswer, iceCandidate }) => {
+      try {
+        if (
+          !roomName ||
+          !userName ||
+          !socketId ||
+          !sdpAnswer ||
+          !iceCandidate
+        ) {
+          socket.emit("error", "Invalid Data");
+          return;
+        }
+        userName = userName.toString().trim().toLowerCase();
+        roomName = roomName.toString().trim().toLowerCase();
+        socket
+          .to(socketId)
+          .emit("answer", { sdpAnswer, iceCandidate, userName, roomName });
+      } catch (error) {
+        console.error(`Error joining room: ${error.message}`);
+        socket.emit("error", "An error occurred while joining the room");
+      }
+    }
+  );
+
+  socket.on("join-room", async ({ userName, roomName }) => {
     try {
-      if (!roomName || !userName || !sdpOffer) {
+      if (!roomName || !userName) {
         socket.emit("error", "Invalid Data");
         return;
       }
-      console.log(sdpOffer);
 
       userName = userName.toString().trim().toLowerCase();
       roomName = roomName.toString().trim().toLowerCase();
@@ -100,17 +171,12 @@ io.on("connection", (socket) => {
         socket.emit("error", `No room exist by the name: ${roomName}`);
         return;
       }
-      if (room.roomSize > 1) {
-        socket.emit("error", "Room has no space");
-        return;
-      }
+
       for (const player of room.players) {
         const p = await User.findById(player);
         if (p.userName === userName) {
           console.log(`${p.userName} already in room ${room.roomName}`);
-          socket.broadcast
-            .to(room.roomName)
-            .emit("joined", { userName, sdpOffer });
+          socket.broadcast.to(room.roomName).emit("joined", { userName });
           socket.join(room.roomName);
           socket.emit("joined-room", {
             room: room,
@@ -118,6 +184,10 @@ io.on("connection", (socket) => {
           });
           return;
         }
+      }
+      if (room.roomSize > 1) {
+        socket.emit("error", "Room has no space");
+        return;
       }
       const newUser = await User.create({
         userName,
@@ -142,7 +212,7 @@ io.on("connection", (socket) => {
       console.log(`${newUser.userName} join the room ${room.roomName}`);
 
       socket.join(room.roomName);
-      socket.broadcast.to(room.roomName).emit("joined", { userName, sdpOffer });
+      socket.broadcast.to(room.roomName).emit("joined", { userName });
       socket.emit("joined-room", {
         room: room,
         user: newUser,
@@ -218,74 +288,74 @@ io.on("connection", (socket) => {
       }
     }
   );
-  socket.on("send-answer", async ({ roomName, sdpAnswer }) => {
-    try {
-      if (!roomName || !sdpAnswer) {
-        socket.emit("error", "Invalid Data");
-        return;
-      }
-      roomName = roomName.toString().trim().toLowerCase();
+  // socket.on("send-answer", async ({ roomName, sdpAnswer }) => {
+  //   try {
+  //     if (!roomName || !sdpAnswer) {
+  //       socket.emit("error", "Invalid Data");
+  //       return;
+  //     }
+  //     roomName = roomName.toString().trim().toLowerCase();
 
-      const room = await Room.findOne({ roomName });
+  //     const room = await Room.findOne({ roomName });
 
-      if (!room) {
-        socket.emit("error", `No room exists with the name: ${roomName}`);
-        return;
-      }
-      console.log("Sending Answer to give offer");
-      socket.broadcast.to(room.roomName).emit("answered", { sdpAnswer });
-    } catch (error) {
-      console.error("Error sending new board:", error);
-      socket.emit("error", "An error occurred while updating the board");
-    }
-  });
-  socket.on("IceCandidateA", async ({ roomName, iceCandidate }) => {
-    try {
-      if (!roomName || !iceCandidate) {
-        socket.emit("error", "Invalid Data");
-        return;
-      }
-      roomName = roomName.toString().trim().toLowerCase();
+  //     if (!room) {
+  //       socket.emit("error", `No room exists with the name: ${roomName}`);
+  //       return;
+  //     }
+  //     console.log("Sending Answer to give offer");
+  //     socket.broadcast.to(room.roomName).emit("answered", { sdpAnswer });
+  //   } catch (error) {
+  //     console.error("Error sending new board:", error);
+  //     socket.emit("error", "An error occurred while updating the board");
+  //   }
+  // });
+  // socket.on("IceCandidateA", async ({ roomName, iceCandidate }) => {
+  //   try {
+  //     if (!roomName || !iceCandidate) {
+  //       socket.emit("error", "Invalid Data");
+  //       return;
+  //     }
+  //     roomName = roomName.toString().trim().toLowerCase();
 
-      const room = await Room.findOne({ roomName });
+  //     const room = await Room.findOne({ roomName });
 
-      if (!room) {
-        socket.emit("error", `No room exists with the name: ${roomName}`);
-        return;
-      }
-      console.log("Sending first ice candidates to give answerr");
+  //     if (!room) {
+  //       socket.emit("error", `No room exists with the name: ${roomName}`);
+  //       return;
+  //     }
+  //     console.log("Sending first ice candidates to give answerr");
 
-      socket.broadcast
-        .to(room.roomName)
-        .emit("first-IceCandidate", { iceCandidate });
-    } catch (error) {
-      console.error("Error sending new board:", error);
-      socket.emit("error", "An error occurred while updating the board");
-    }
-  });
-  socket.on("IceCandidateB", async ({ roomName, iceCandidate }) => {
-    try {
-      if (!roomName || !iceCandidate) {
-        socket.emit("error", "Invalid Data");
-        return;
-      }
-      roomName = roomName.toString().trim().toLowerCase();
+  //     socket.broadcast
+  //       .to(room.roomName)
+  //       .emit("first-IceCandidate", { iceCandidate });
+  //   } catch (error) {
+  //     console.error("Error sending new board:", error);
+  //     socket.emit("error", "An error occurred while updating the board");
+  //   }
+  // });
+  // socket.on("IceCandidateB", async ({ roomName, iceCandidate }) => {
+  //   try {
+  //     if (!roomName || !iceCandidate) {
+  //       socket.emit("error", "Invalid Data");
+  //       return;
+  //     }
+  //     roomName = roomName.toString().trim().toLowerCase();
 
-      const room = await Room.findOne({ roomName });
+  //     const room = await Room.findOne({ roomName });
 
-      if (!room) {
-        socket.emit("error", `No room exists with the name: ${roomName}`);
-        return;
-      }
-      console.log("Sending second ice candidates to give first ice candidates");
-      socket.broadcast
-        .to(room.roomName)
-        .emit("second-IceCandidate", { iceCandidate });
-    } catch (error) {
-      console.error("Error sending new board:", error);
-      socket.emit("error", "An error occurred while updating the board");
-    }
-  });
+  //     if (!room) {
+  //       socket.emit("error", `No room exists with the name: ${roomName}`);
+  //       return;
+  //     }
+  //     console.log("Sending second ice candidates to give first ice candidates");
+  //     socket.broadcast
+  //       .to(room.roomName)
+  //       .emit("second-IceCandidate", { iceCandidate });
+  //   } catch (error) {
+  //     console.error("Error sending new board:", error);
+  //     socket.emit("error", "An error occurred while updating the board");
+  //   }
+  // });
 
   socket.on("game-alert", async ({ roomName, title, content }) => {
     try {
